@@ -20,6 +20,9 @@ export class CreateBookDto {
 
   @IsString()
   @IsNotEmpty()
+  @Matches(/^(?=(?:\D*\d){10}(?:(?:\D*\d){3})?$)[\d-]+$/, {
+    message: 'Invalid ISBN format',
+  })
   ISBN: string;
 
   @IsString()

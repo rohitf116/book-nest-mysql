@@ -1,12 +1,17 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { Book } from './entities/book.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SubCategory } from './entities/subcategories.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateSubcategoryDto } from './dto/create-subcategory.dto';
 import { ModifiedRequest } from 'src/users/m';
+import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class BooksService {
@@ -32,6 +37,16 @@ export class BooksService {
     });
     return subCategory;
   }
+  async finOneById(subIds: number[]) {
+    const x = await this.subcategoryRepository.find({
+      where: {
+        id: In(subIds),
+      },
+    });
+
+    return x;
+  }
+
   async findAllSubcategory() {
     const subCategory = await this.subcategoryRepository.find({});
     return subCategory;
@@ -43,36 +58,70 @@ export class BooksService {
       throw new ConflictException('This isbn already exist');
     }
     const userId = req.user;
-    const book = this.bookRepository.create({ ...createBookDto, user: userId });
+    console.log({ createBookDto });
+    const found = await this.finOneById(createBookDto.subcategories);
+
+    // const tags = found.map((createTagDto) => new SubCategory(createTagDto));
+    // return found;
+
+    const book = this.bookRepository.create({
+      ...createBookDto,
+      subcategories: found,
+      user: userId,
+    });
+    console.log(book);
     return this.bookRepository.save(book);
   }
-
   async findOneByIsbn(isbn: string) {
     const book = await this.bookRepository.findOne({
-      where: { ISBN: isbn },
+      where: { ISBN: isbn, isDeleted: false },
     });
     return book;
   }
 
   findAll() {
-    return this.bookRepository.find({});
+    return this.bookRepository.find({
+      where: { isDeleted: false },
+      relations: ['subcategories'],
+    });
   }
   async findAllMy(req: ModifiedRequest) {
     const userId = req.user;
     return this.bookRepository.find({
-      where: { user: userId },
+      where: { user: userId, isDeleted: false },
     });
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} book`;
+    return this.bookRepository.findOne({
+      where: { id, isDeleted: false },
+      relations: ['subcategories'],
+    });
   }
 
-  update(id: number, updateBookDto: UpdateBookDto) {
-    return `This action updates a #${id} book`;
+  async update(id: number, req: ModifiedRequest, updateBookDto: UpdateBookDto) {
+    const user = req.user;
+    const result = await this.bookRepository.findOne({
+      where: { id, user, isDeleted: false },
+      relations: ['subcategories'],
+    });
+    if (!result) throw new NotFoundException('Book not found');
+    const found = await this.finOneById(updateBookDto.subcategories);
+
+    Object.assign(result, { ...updateBookDto, subcategories: found });
+    const updated = await this.bookRepository.save(result);
+    return updated;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} book`;
+  async remove(id: number, req: ModifiedRequest) {
+    const user = req.user;
+    const result = await this.bookRepository.findOne({
+      where: { id, user, isDeleted: false },
+    });
+    if (!result) throw new NotFoundException('Book not found');
+    result.isDeleted = true;
+    result.deletedAt = new Date();
+    await this.bookRepository.save(result);
+    return result;
   }
 }

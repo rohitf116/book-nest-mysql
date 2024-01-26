@@ -9,6 +9,8 @@ import { Address } from './users/entities/address.entity';
 import { BooksModule } from './books/books.module';
 import { Book } from './books/entities/book.entity';
 import { SubCategory } from './books/entities/subcategories.entity';
+import { ReviewsModule } from './reviews/reviews.module';
+import { Review } from './reviews/entities/review.entity';
 
 @Module({
   imports: [
@@ -19,11 +21,12 @@ import { SubCategory } from './books/entities/subcategories.entity';
       username: 'admin',
       password: 'rohit123',
       database: 'bookManagement',
-      entities: [User, Address, Book, SubCategory],
+      entities: [User, Address, Book, SubCategory, Review],
       synchronize: true,
     }),
     UsersModule,
     BooksModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

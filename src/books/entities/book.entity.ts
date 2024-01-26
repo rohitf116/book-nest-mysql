@@ -7,8 +7,10 @@ import {
   JoinColumn,
   ManyToOne,
   ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { SubCategory } from './subcategories.entity';
+import { Review } from 'src/reviews/entities/review.entity';
 
 @Entity() // Add this decorator to indicate that Book is an entity
 export class Book {
@@ -36,8 +38,15 @@ export class Book {
   })
   category: string;
 
-  @ManyToMany(() => SubCategory, (subcategory) => subcategory.books)
-  subcategory: SubCategory[];
+  @ManyToMany(() => SubCategory, (subcategories) => subcategories.book, {
+    cascade: true,
+  })
+  @JoinTable({
+    name: 'book_sub_categories',
+    joinColumn: { name: 'bookId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'subcategoryId', referencedColumnName: 'id' },
+  })
+  subcategories: SubCategory[];
 
   @Column({ default: false })
   isDeleted: boolean;
@@ -54,8 +63,15 @@ export class Book {
   })
   releasedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.books)
+  @ManyToOne(() => User, (user) => user.books, { cascade: true })
+  @JoinColumn()
   user: User;
+  @OneToMany(() => Review, (review) => review.book)
+  @JoinColumn()
+  review: Review[];
+
+  @Column({ default: 0 })
+  reviews: number;
 
   @Column({
     type: 'timestamp',
