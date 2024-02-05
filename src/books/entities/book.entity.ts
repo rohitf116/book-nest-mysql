@@ -57,6 +57,9 @@ export class Book {
   })
   deletedAt: Date;
 
+  @Column()
+  image: string;
+
   @Column({
     type: 'timestamp',
     nullable: false,
@@ -66,6 +69,7 @@ export class Book {
   @ManyToOne(() => User, (user) => user.books, { cascade: true })
   @JoinColumn()
   user: User;
+
   @OneToMany(() => Review, (review) => review.book)
   @JoinColumn()
   review: Review[];

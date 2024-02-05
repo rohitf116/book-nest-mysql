@@ -20,7 +20,7 @@ import { Review } from './reviews/entities/review.entity';
       port: 3306,
       username: 'admin',
       password: 'rohit123',
-      database: 'bookManagement',
+      database: 'bookManagement2',
       entities: [User, Address, Book, SubCategory, Review],
       synchronize: true,
     }),

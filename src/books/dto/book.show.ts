@@ -23,6 +23,9 @@ export class BookShowDto {
   title: string;
 
   @Expose()
+  image: string;
+
+  @Expose()
   excerpt: string;
 
   @Expose()

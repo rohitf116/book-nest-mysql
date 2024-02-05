@@ -55,7 +55,8 @@ export class UsersService {
     }
     const payload = { userId: isEmailUsed.id };
     return {
-      access_token: await this.jwtService.signAsync(payload),
+      ...isEmailUsed,
+      token: await this.jwtService.signAsync(payload),
     };
   }
 

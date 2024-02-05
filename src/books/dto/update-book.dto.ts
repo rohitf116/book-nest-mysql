@@ -28,9 +28,8 @@ export class UpdateBookDto extends PartialType(CreateBookDto) {
   @IsOptional()
   category: string;
 
-  @ArrayNotEmpty()
-  @IsOptional()
-  subcategories: number[]; // Assuming subcategories are represented by their IDs
+  @IsString()
+  subcategories: string; // Assuming subcategories are represented by their IDs
 
   @IsDateString()
   @IsOptional()

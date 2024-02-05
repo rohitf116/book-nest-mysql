@@ -21,14 +21,6 @@ export class SubCategory {
   })
   name: string;
 
-  // @ManyToMany(() => Book, (book) => book.subcategories)
-  // @JoinTable({
-  //   name: 'book_sub_categories',
-  //   joinColumn: { name: 'subcategoryId', referencedColumnName: 'id' },
-  //   inverseJoinColumn: { name: 'bookId', referencedColumnName: 'id' },
-  // })
-  // book: Book[];
-
   @ManyToMany(() => Book, (book) => book.subcategories)
   @JoinTable({
     name: 'book_sub_categories',

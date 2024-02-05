@@ -17,32 +17,42 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { AuthGuard } from 'src/guard/auth.guard';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { ModifiedRequest } from './m';
+import { Serialize } from 'src/interceptor/serialize.interceptor';
+import { UserShowDto } from './dto/user.show.dto';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Serialize(UserShowDto)
+  @Post('/register')
+  async create(@Body() createUserDto: CreateUserDto) {
+    const user = await this.usersService.create(createUserDto);
+
+    return { message: 'User created', data: { ...user, token: '' } };
   }
 
+  @Serialize(UserShowDto)
   @Post('/login')
-  login(@Body() loginUserDto: LoginUserDto) {
-    return this.usersService.login(loginUserDto);
+  async login(@Body() loginUserDto: LoginUserDto) {
+    const user = await this.usersService.login(loginUserDto);
+    return { message: 'User created', data: user };
   }
 
+  @Serialize(UserShowDto)
   @UseGuards(AuthGuard)
   @Get()
   findAll() {
     return this.usersService.findAll();
   }
+
   @UseGuards(AuthGuard)
   @Post('/address')
   addAddress(@Body() address: CreateAddressDto) {
     return this.usersService.addAddress(12, address);
   }
 
+  @Serialize(UserShowDto)
   @UseGuards(AuthGuard)
   @Get('current')
   findOne(@Req() req: ModifiedRequest) {

@@ -15,7 +15,9 @@ export class ReviewsService {
     private readonly reviewRepository: Repository<Review>,
   ) {}
   async create(id: number, createReviewDto: CreateReviewDto) {
-    const foundBook = await this.bookRepository.findOne({ where: { id } });
+    const foundBook = await this.bookRepository.findOne({
+      where: { id, isDeleted: true },
+    });
     if (!foundBook) throw new NotFoundException('Book not found');
     const reviewedAt = new Date();
     const review = this.reviewRepository.create({

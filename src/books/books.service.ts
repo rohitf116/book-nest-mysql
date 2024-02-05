@@ -12,6 +12,7 @@ import { In, Repository } from 'typeorm';
 import { CreateSubcategoryDto } from './dto/create-subcategory.dto';
 import { ModifiedRequest } from 'src/users/m';
 import { NotFoundError } from 'rxjs';
+import { uploadFile } from 'src/utils/awsS3.util';
 
 @Injectable()
 export class BooksService {
@@ -54,22 +55,46 @@ export class BooksService {
 
   async create(createBookDto: CreateBookDto, req: ModifiedRequest) {
     const isIsbnUsed = await this.findOneByIsbn(createBookDto.ISBN);
+
     if (isIsbnUsed) {
       throw new ConflictException('This isbn already exist');
     }
+    let file = null;
+    let uploadedFile = '';
+    if (req.files.length) {
+      file = req.files[0];
+      uploadedFile = await uploadFile(file);
+    }
+
     const userId = req.user;
     console.log({ createBookDto });
-    const found = await this.finOneById(createBookDto.subcategories);
+    let subCat: number[];
+    if (createBookDto?.subcategories?.includes(',')) {
+      const subcategories = createBookDto.subcategories.split(',');
+      subCat = subcategories.map((i) => Number(i));
+    } else {
+      subCat = [
+        Number(createBookDto.subcategories) >= 0
+          ? Number(createBookDto.subcategories)
+          : 0,
+      ];
+    }
+
+    // console.log(subcategories);
+    // const found = await this.finOneById(createBookDto.subcategories);
+    const found = await this.finOneById(subCat);
 
     // const tags = found.map((createTagDto) => new SubCategory(createTagDto));
     // return found;
-
-    const book = this.bookRepository.create({
+    const newObj = {
       ...createBookDto,
+      image: uploadedFile,
       subcategories: found,
       user: userId,
-    });
-    console.log(book);
+    };
+
+    const book = this.bookRepository.create(newObj);
+    // console.log(book);
     return this.bookRepository.save(book);
   }
   async findOneByIsbn(isbn: string) {
@@ -79,11 +104,12 @@ export class BooksService {
     return book;
   }
 
-  findAll() {
-    return this.bookRepository.find({
+  async findAll() {
+    const b = await this.bookRepository.find({
       where: { isDeleted: false },
       relations: ['subcategories'],
     });
+    return b;
   }
   async findAllMy(req: ModifiedRequest) {
     const userId = req.user;
@@ -106,8 +132,15 @@ export class BooksService {
       relations: ['subcategories'],
     });
     if (!result) throw new NotFoundException('Book not found');
-    const found = await this.finOneById(updateBookDto.subcategories);
-
+    const subcategories = updateBookDto.subcategories.split(',');
+    const numArray = subcategories.map((i) => Number(i));
+    const found = await this.finOneById(numArray);
+    if (result.ISBN !== updateBookDto.ISBN) {
+      const isIsbnUsed = await this.findOneByIsbn(updateBookDto.ISBN);
+      if (isIsbnUsed) {
+        throw new ConflictException('This isbn already exist');
+      }
+    }
     Object.assign(result, { ...updateBookDto, subcategories: found });
     const updated = await this.bookRepository.save(result);
     return updated;
